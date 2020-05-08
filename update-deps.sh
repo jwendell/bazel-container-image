@@ -18,10 +18,14 @@ function init(){
         "bazel_tools"
         "envoy_build_config"
         "local_config_cc"
+        "local_jdk"
         "local_config_cc_toolchains"
         "local_config_platform"
         "local_config_sh"
         "local_config_xcode"
+        "bazel_gazelle_go_repository_cache"
+        "bazel_gazelle_go_repository_config"
+        "bazel_gazelle_go_repository_tools"
   )
 }
 
