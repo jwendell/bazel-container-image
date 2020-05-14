@@ -26,6 +26,8 @@ function init(){
         "bazel_gazelle_go_repository_cache"
         "bazel_gazelle_go_repository_config"
         "bazel_gazelle_go_repository_tools"
+        "openssl"
+        "go_sdk"
   )
 }
 
@@ -61,7 +63,13 @@ function copy_files() {
     fi
 
   find "${VENDOR_DIR}" -name .git -type d -print0 | xargs -0 -r rm -rf
+  find "${VENDOR_DIR}" -name .gitignore -type f -delete
 done
+}
+
+function apply_local_patches() {
+  sed -i 's/fatal_linker_warnings = true/fatal_linker_warnings = false/g' ${VENDOR_DIR}/com_googlesource_chromium_v8/wee8/build/config/compiler/BUILD.gn
+  sed -i 's/GO_VERSION[ ]*=.*/GO_VERSION = "host"/g' ${VENDOR_DIR}/envoy/bazel/dependency_imports.bzl
 }
 
 function run_bazel() {
@@ -79,6 +87,7 @@ function main() {
   init
   run_bazel
   copy_files
+  apply_local_patches
   ensure_import_bazelrc
 
   echo
