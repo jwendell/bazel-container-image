@@ -5,9 +5,12 @@ set -u
 set -o pipefail
 
 function init(){
+  ROOT_DIR="$(pwd)"
+
   OUTPUT_BASE="$(mktemp -d)"
   VENDOR_DIR="/work/maistra/vendor"
-  BAZELRC="maistra/bazelrc"
+  BAZELRC="${ROOT_DIR}/maistra/bazelrc"
+  PATCHES_DIR="${ROOT_DIR}/maistra/patches"
 
   rm -rf "${OUTPUT_BASE}" &&  mkdir -p "${OUTPUT_BASE}"
   rm -rf "${VENDOR_DIR}" &&  mkdir -p "${VENDOR_DIR}"
@@ -70,16 +73,24 @@ done
 function apply_local_patches() {
   sed -i 's/fatal_linker_warnings = true/fatal_linker_warnings = false/g' ${VENDOR_DIR}/com_googlesource_chromium_v8/wee8/build/config/compiler/BUILD.gn
   sed -i 's/GO_VERSION[ ]*=.*/GO_VERSION = "host"/g' ${VENDOR_DIR}/envoy/bazel/dependency_imports.bzl
+
+  pushd "${VENDOR_DIR}/envoy"
+    patch -p1 -i "${PATCHES_DIR}/envoy-bigendian.patch"
+    patch -p1 -i "${PATCHES_DIR}/envoy-multiarch.patch"
+  popd
+
+  pushd "${VENDOR_DIR}/com_github_gperftools_gperftools"
+    patch -p1 -i ${PATCHES_DIR}/gperftools-s390x.patch
+  popd
+
+  pushd "${VENDOR_DIR}/com_github_luajit_luajit"
+    patch -p1 -i "${PATCHES_DIR}/luajit-s390x.patch"
+    patch -p1 -i "${PATCHES_DIR}/luajit-ppc64.patch"
+  popd
 }
 
 function run_bazel() {
   bazel --output_base="${OUTPUT_BASE}" fetch //... || true
-}
-
-function ensure_import_bazelrc() {
-  if ! grep -q "try-import %workspace%/${BAZELRC}" .bazelrc; then
-    echo "try-import %workspace%/${BAZELRC}" >> .bazelrc
-  fi
 }
 
 function main() {
@@ -88,7 +99,6 @@ function main() {
   run_bazel
   copy_files
   apply_local_patches
-  ensure_import_bazelrc
 
   echo
   echo "Done. Inspect the result with git status"

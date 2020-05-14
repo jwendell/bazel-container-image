@@ -1,6 +1,8 @@
 FROM fedora:32
 
-RUN curl -o /usr/local/bin/bazel -Ls https://github.com/bazelbuild/bazelisk/releases/download/v1.4.0/bazelisk-linux-amd64 && \
+ARG BAZEL_VERSION=1.1.0
+
+RUN curl -o /usr/local/bin/bazel -Ls https://github.com/bazelbuild/bazel/releases/download/${BAZEL_VERSION}/bazel-${BAZEL_VERSION}-linux-x86_64 && \
     chmod +x /usr/local/bin/bazel
 
 RUN mkdir /work
